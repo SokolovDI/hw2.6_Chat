@@ -1,25 +1,30 @@
+
 /**
- * 1. Написать консольный вариант клиент\серверного приложения, в котором пользователь может писать сообщения,
- * как на клиентской стороне, так и на серверной. Т.е. если на клиентской стороне написать "Привет",
- * нажать Enter то сообщение должно передаться на сервер и там отпечататься в консоли.
- * Если сделать то же самое на серверной стороне, сообщение соответственно передается клиенту и
- * печатается у него в консоли. Есть одна особенность, которую нужно учитывать: клиент или сервер
- * может написать несколько сообщений подряд, такую ситуацию необходимо корректно обработать
+ Разобраться с кодом
+ Организовать запрет аутентификации с одной учетной записи.
+ Т.е. под логином и пароль может сидеть только на одном ПК.
+
+ Организовать отправку личных сообщений.
+ Например, пользователь nick1 вводит:
+ @nick2 привет
+ У пользователя nick1 и nick2 должно быть в чате:
+ nick1: [Отправлено для nick2] привет
+ Остальные пользователи не должны увидеть это сообщение
  */
 
 package sample;
 
 import javafx.application.Application;
-import javafx.event.EventHandler;
+
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
-import javafx.stage.WindowEvent;
 
 public class Main extends Application {
+
     @Override
-    public void start(Stage primaryStage) throws Exception {
+    public void start(Stage primaryStage) throws Exception{
         FXMLLoader loader = new FXMLLoader(getClass().getResource("sample.fxml"));
         Parent root = loader.load();
         primaryStage.setTitle("Chat");
@@ -30,6 +35,7 @@ public class Main extends Application {
             Controller controller = loader.getController();
             controller.disconnect();
         });
+
     }
     public static void main(String[] args) {
         launch(args);
