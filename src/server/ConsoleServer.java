@@ -1,4 +1,3 @@
-
 package server;
 
 import java.io.IOException;
@@ -7,16 +6,13 @@ import java.net.Socket;
 import java.util.Vector;
 
 public class ConsoleServer {
-    private Vector<ClientHandler> users;
-
-    public Vector<ClientHandler> getUsers() {
-        return users;
-    }
+    private final Vector<ClientHandler> users;
 
     public ConsoleServer() {
         users = new Vector<>();
-        ServerSocket server = null;
-        Socket socket = null;
+        ServerSocket server; // наша сторона
+        server = null;
+        Socket socket = null; // удаленная (remote) сторона
 
         try {
             AuthService.connect();
@@ -25,7 +21,7 @@ public class ConsoleServer {
 
             while (true) {
                 socket = server.accept();
-                System.out.printf("Client [%s] connected\n", socket.getInetAddress());
+                System.out.printf("Client [%s] try to connect\n", socket.getInetAddress());
                 new ClientHandler(this, socket);
             }
 
@@ -33,6 +29,8 @@ public class ConsoleServer {
             e.printStackTrace();
         } finally {
             try {
+                assert socket != null;
+                System.out.printf("Client [%s] disconnected", socket.getInetAddress());
                 socket.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -48,35 +46,51 @@ public class ConsoleServer {
 
     public void subscribe(ClientHandler client) {
         users.add(client);
+        System.out.printf("User [%s] connected%n", client.getNickname());
+        broadcastClientsList();
     }
 
     public void unsubscribe(ClientHandler client) {
         users.remove(client);
+        System.out.printf("User [%s] disconnected%n", client.getNickname());
+        broadcastClientsList();
     }
 
-    public synchronized boolean isNickBusy(String nick) {
-        for (ClientHandler o : users) {
-            if (o.getNickname().equals(nick)) {
+    public void broadcastMessage(ClientHandler from, String str) {
+        for (ClientHandler c : users) {
+            if (!c.checkBlackList(from.getNickname())) {
+                c.sendMsg(str);
+            }
+        }
+    }
+    public boolean isNickBusy(String nick) {
+        for (ClientHandler c : users) {
+            if (c.getNickname().equals(nick)) {
                 return true;
             }
         }
         return false;
     }
-
-
-    public void broadcastMessage(String str) {
+    public void sendPrivateMsg(ClientHandler nickFrom, String nickTo, String msg) {
         for (ClientHandler c : users) {
-            c.sendMsg(str);
+            if (c.getNickname().equals(nickTo)) {
+                if (!nickFrom.getNickname().equals(nickTo)) {
+                    c.sendMsg(nickFrom.getNickname() + ": [Send for " + nickTo + "] " + msg);
+                    nickFrom.sendMsg(nickFrom.getNickname() + ": [Send for " + nickTo + "] " + msg);
+                }
+            }
         }
     }
-
-    public void sendPrivateMessage(String msg, String nickAccept, String nickSend) {
+    private void broadcastClientsList() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("/clientList ");
         for (ClientHandler c : users) {
-            if (c.getNickname().equals(nickAccept))
-                c.sendMsg(msg);
-            if (c.getNickname().equals(nickSend))
-                c.sendMsg(msg);
+            sb.append(c.getNickname()).append(" ");
+        }
+
+        String out = sb.toString();
+        for (ClientHandler c : users) {
+            c.sendMsg(out);
         }
     }
 }
-
